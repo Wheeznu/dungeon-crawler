@@ -1,4 +1,8 @@
+
+
 # Dungeon Crawler (TUI Game)
+
+![Gameplay Preview](main.png)
 
 Sebuah game *RPG Dungeon Crawler* klasik berbasis terminal (TUI) yang ditulis dalam Python menggunakan library `curses`. Masuki dungeon, hadapi monster, kumpulkan *loot*, rekrut hero di *tavern* (kedai minum), dan perkuat tim Anda untuk mencapai lantai tertinggi.
 
