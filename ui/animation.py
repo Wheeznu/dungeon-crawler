@@ -23,7 +23,7 @@ class AnimationEngine:
             event = self.queue.pop(0)
             if event["type"] == "DAMAGE":
                 crit_str = " (CRITICAL)" if event.get("is_crit") else ""
-                self.combat_log.append(f"> {event['source']} serang {event['target']} [-{event['value']} HP]{crit_str}")
+                self.combat_log.append(f"> {event['source']} attacks {event['target']} [-{event['value']} HP]{crit_str}")
                 
                 self.floating_texts.append({
                     "text": f"-{event['value']}{' CRIT!' if event.get('is_crit') else ''}",
@@ -35,7 +35,7 @@ class AnimationEngine:
                 if event.get("is_crit"):
                     self.shake_frames = 5
             elif event["type"] == "HEAL":
-                self.combat_log.append(f"> {event['source']} heal {event['target']} [+{event['value']} HP]")
+                self.combat_log.append(f"> {event['source']} heals {event['target']} [+{event['value']} HP]")
                 self.floating_texts.append({
                     "text": f"+{event['value']}",
                     "x": 20, 
