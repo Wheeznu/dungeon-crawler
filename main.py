@@ -20,6 +20,7 @@ from database.items_db import get_base_item
 from ui.views.hub_view import render_town_hub, render_team_management, render_tavern, render_level_selection, render_equip_menu, render_shop_menu
 from ui.views.start_menu import render_start_menu
 from core.save_manager import save_game, load_game
+from systems.translation import translate
 
 def player_turn(stdscr, wm, actor, heroes, enemies, engine):
     stdscr.nodelay(False)
@@ -172,14 +173,14 @@ def main(stdscr):
             
         inventory_sys = InventorySystem()
         if action == "NEW_GAME":
-            wm.draw_loading_screen("Memulai Game Baru...")
+            wm.draw_loading_screen(translate("new_game_loading"))
             roster = [create_hero("WARRIOR"), create_hero("MAGE")]
             highest_floor = 1
             gold = 200
             active_slot = slot
             unsaved_progress = True
         elif action == "LOAD_GAME":
-            wm.draw_loading_screen(f"Memuat Save Data {slot}...")
+            wm.draw_loading_screen(f"{translate('load_game_loading')} {slot}...")
             data = load_game(slot)
             roster = []
             if data and "roster" in data:
@@ -249,14 +250,14 @@ def main(stdscr):
                         unsaved_progress = True
                 elif choice == 5:
                     from ui.views.start_menu import render_save_slot_menu
-                    sel_slot = render_save_slot_menu(stdscr, wm, "Pilih Slot untuk Menyimpan")
+                    sel_slot = render_save_slot_menu(stdscr, wm, translate("save_slot_title"))
                     if sel_slot:
                         save_game(roster, gold, highest_floor, inventory_sys.items, sel_slot)
                         active_slot = sel_slot
                         unsaved_progress = False
                         stdscr.nodelay(False)
                         wm.stdscr.clear()
-                        try: wm.stdscr.addstr(5, 5, f"Game berhasil disimpan di Slot {active_slot}! (Tekan tombol apapun)", curses.color_pair(4))
+                        try: wm.stdscr.addstr(5, 5, f"{translate('save_success')} {active_slot}! {translate('press_any_key')}", curses.color_pair(4))
                         except curses.error: pass
                         wm.stdscr.refresh()
                         stdscr.getch()
@@ -272,8 +273,8 @@ def main(stdscr):
                             start_x = (max_x - box_w) // 2
                             win = curses.newwin(box_h, box_w, start_y, start_x)
                             wm.draw_borders(win, " WARNING ")
-                            win.addstr(2, 2, "ADA PROGRESS YANG BELUM DISAVE!", curses.color_pair(1) | curses.A_BOLD)
-                            win.addstr(4, 2, "YAKIN INGIN KELUAR KE MAIN MENU? (Y/N)")
+                            win.addstr(2, 2, translate("warning_unsaved"), curses.color_pair(1) | curses.A_BOLD)
+                            win.addstr(4, 2, translate("confirm_quit"))
                             win.refresh()
                         except curses.error: pass
                         confirmed = False
@@ -410,11 +411,11 @@ def main(stdscr):
                         total_gold_gained += wave_gold
                         
                         wave_loot = generate_loot(active_floor, party, is_boss)
-                        loot_msg = "Tidak ada item drop."
+                        loot_msg = translate("loot_none")
                         if wave_loot:
                             inventory_sys.add_item(wave_loot)
                             total_loot.append(wave_loot)
-                            loot_msg = f"Item Drop: {wave_loot.name} ({wave_loot.rarity.name})"
+                            loot_msg = f"{translate('loot_dropped')}: {wave_loot.name} ({wave_loot.rarity.name})"
                             
                         for h in party:
                             if not h.is_dead:
@@ -429,16 +430,16 @@ def main(stdscr):
                                 max_y, max_x = stdscr.getmaxyx()
                                 center_y = max_y // 2
                                 
-                                title = f"=== WAVE {current_wave_idx} CLEARED! ==="
+                                title = f"=== {translate('wave_cleared')} ==="
                                 wm.stdscr.addstr(center_y - 3, max(0, (max_x - len(title)) // 2), title, curses.color_pair(3) | curses.A_BOLD)
                                 
-                                msg1 = f"* Mendapat {wave_gold} Gold."
+                                msg1 = f"* {translate('gold_gained')}: {wave_gold} Gold."
                                 wm.stdscr.addstr(center_y - 1, max(0, (max_x - len(msg1)) // 2), msg1, curses.color_pair(3))
                                 
                                 msg2 = f"- {loot_msg}"
                                 wm.stdscr.addstr(center_y, max(0, (max_x - len(msg2)) // 2), msg2)
                                 
-                                prompt = "(Tekan tombol apapun untuk lanjut...)"
+                                prompt = translate("next_wave_prompt")
                                 wm.stdscr.addstr(center_y + 3, max(0, (max_x - len(prompt)) // 2), prompt, curses.color_pair(4))
                                 
                                 wm.stdscr.refresh()
@@ -478,18 +479,18 @@ def main(stdscr):
                         for i, line in enumerate(art):
                             wm.stdscr.addstr(art_start_y+i, art_x, line, curses.color_pair(3) | curses.A_BOLD)
                             
-                        msg1 = f"* Total Gold Diperoleh: {total_gold_gained}"
+                        msg1 = f"* {translate('gold_gained_total')}: {total_gold_gained}"
                         wm.stdscr.addstr(center_y + 1, max(0, (max_x - len(msg1)) // 2), msg1, curses.color_pair(3))
                         
-                        loot_summary = ", ".join([l.name for l in total_loot]) if total_loot else "Tidak Ada"
+                        loot_summary = ", ".join([l.name for l in total_loot]) if total_loot else translate("loot_none")
                         if len(loot_summary) > 60: loot_summary = loot_summary[:57] + "..."
-                        msg2 = f"- Item Drop ({len(total_loot)}): {loot_summary}"
+                        msg2 = f"- {translate('loot_dropped')} ({len(total_loot)}): {loot_summary}"
                         wm.stdscr.addstr(center_y + 2, max(0, (max_x - len(msg2)) // 2), msg2)
                         
-                        msg3 = "* Semua hero mendapatkan XP!"
+                        msg3 = f"* {translate('xp_gained_all')}"
                         wm.stdscr.addstr(center_y + 4, max(0, (max_x - len(msg3)) // 2), msg3, curses.color_pair(4))
                         
-                        prompt = "(Tekan tombol apapun untuk kembali ke Kota...)"
+                        prompt = translate("return_to_town_prompt")
                         wm.stdscr.addstr(center_y + 6, max(0, (max_x - len(prompt)) // 2), prompt, curses.color_pair(1))
                         
                         wm.stdscr.refresh()
@@ -500,13 +501,13 @@ def main(stdscr):
                         max_y, max_x = stdscr.getmaxyx()
                         center_y = max_y // 2
                         
-                        title = "=== GAME OVER ==="
+                        title = translate("game_over_title")
                         wm.stdscr.addstr(center_y - 2, max(0, (max_x - len(title)) // 2), title, curses.color_pair(1) | curses.A_BOLD)
                         
-                        msg1 = "X KALAH! Party kamu terbunuh..."
+                        msg1 = translate("defeat_msg")
                         wm.stdscr.addstr(center_y, max(0, (max_x - len(msg1)) // 2), msg1, curses.color_pair(1))
                         
-                        prompt = "(Tekan tombol apapun untuk kembali ke Kota...)"
+                        prompt = translate("return_to_town_prompt")
                         wm.stdscr.addstr(center_y + 3, max(0, (max_x - len(prompt)) // 2), prompt)
                         
                         wm.stdscr.refresh()

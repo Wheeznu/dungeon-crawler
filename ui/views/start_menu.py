@@ -1,5 +1,7 @@
 import curses
 from core.save_manager import check_save_slots, get_save_info
+from systems.translation import translate
+from systems.config import config
 
 def render_start_menu(stdscr, wm):
     stdscr.nodelay(False)
@@ -70,10 +72,10 @@ def render_start_menu(stdscr, wm):
             choice = options[selected]
             if choice == "New Game":
                 # Select slot for new game
-                slot = render_save_slot_menu(stdscr, wm, "Pilih Slot untuk Profil Baru")
+                slot = render_save_slot_menu(stdscr, wm, translate("new_slot_title"))
                 if slot: return ("NEW_GAME", slot)
             elif choice == "Continue":
-                slot = render_save_slot_menu(stdscr, wm, "Pilih Save Data untuk Dilanjutkan")
+                slot = render_save_slot_menu(stdscr, wm, translate("load_slot_title"))
                 if slot: return ("LOAD_GAME", slot)
             elif choice == "Options":
                 render_options_menu(stdscr, wm)
@@ -99,12 +101,12 @@ def render_save_slot_menu(stdscr, wm, title):
                 info = get_save_info(i)
                 prefix = "≫ " if (i-1) == selected else "  "
                 if info["exists"]:
-                    text = f"Slot {i}: Lantai {info['floor']} | Gold: {info['gold']} | Hero: {info['heroes']}"
+                    text = f"Slot {i}: {'Lantai' if config.get('language', 'ID') == 'ID' else 'Floor'} {info['floor']} | Gold: {info['gold']} | Hero: {info['heroes']}"
                 else:
-                    text = f"Slot {i}: [ KOSONG ]"
+                    text = f"Slot {i}: {translate('save_slot_empty')}"
                 win.addstr(2 + (i-1)*2, 4, f"{prefix}{text}")
                 
-            win.addstr(8, 4, "(ESC untuk membatalkan)")
+            win.addstr(8, 4, translate("back_esc"))
             win.refresh()
         except curses.error:
             pass
@@ -139,7 +141,7 @@ def render_options_menu(stdscr, wm):
             f"Visual FX: {'ON' if config['visual_fx'] else 'OFF'}",
             f"Combat Log Lines: {config['log_lines']}",
             f"Language: {config['language']}",
-            "Kembali"
+            translate("options_back")
         ]
         
         wm.stdscr.clear()
@@ -152,7 +154,7 @@ def render_options_menu(stdscr, wm):
             start_x = (max_x - box_w) // 2
             
             win = curses.newwin(box_h, box_w, start_y, start_x)
-            wm.draw_borders(win, " OPTIONS (Kiri/Kanan/Enter untuk ubah) ")
+            wm.draw_borders(win, translate("options_title"))
             
             for i, opt in enumerate(options):
                 prefix = "≫ " if i == selected else "  "
@@ -199,13 +201,6 @@ def render_options_menu(stdscr, wm):
                 else:
                     idx = (idx + 1) % len(langs)
                 config["language"] = langs[idx]
-                if config["language"] == "EN":
-                    win.clear()
-                    wm.draw_borders(win, " INFO ")
-                    win.addstr(4, 4, "Sorry, English is not fully supported yet!", curses.color_pair(1))
-                    win.addstr(6, 4, "Enjoy playing in Indonesian!")
-                    win.refresh()
-                    curses.napms(2000)
             elif selected == 5:
                 if key in [10, 13]:
                     save_settings()

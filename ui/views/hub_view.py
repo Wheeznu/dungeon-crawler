@@ -1,18 +1,20 @@
 import curses
 from database.classes_db import HERO_ARCHETYPES
 from models.item import ItemType
+from systems.translation import translate
+from systems.config import config
 
 def render_town_hub(stdscr, wm, party, highest_floor, gold, inventory_sys):
     stdscr.nodelay(False)
     selected = 0
     options = [
-        "1. Masuk Dungeon (Mulai Pertarungan)", 
-        "2. Manajemen Tim (Pilih 4 Anggota & Status)", 
-        "3. Gudang Senjata (Equip Item)",
-        "4. Toko Item (Jual Barang)",
-        "5. Kedai Minum (Tavern - Rekrut Pahlawan)",
-        "6. Save Game", 
-        "7. Keluar (Quit)"
+        translate("menu_dungeon"), 
+        translate("menu_team"), 
+        translate("menu_weapons"),
+        translate("menu_shop"),
+        translate("menu_tavern"),
+        translate("menu_save"), 
+        translate("menu_quit")
     ]
     
     title_art = [
@@ -49,13 +51,13 @@ def render_town_hub(stdscr, wm, party, highest_floor, gold, inventory_sys):
                 win_title.addstr(1+i, art_x, line, curses.color_pair(3))
                 
             # Draw Menu Panel
-            wm.draw_borders(win_menu, f" KOTA LINDUNG (Lantai: {highest_floor} | Gold: {gold} | Item: {len(inventory_sys.items)}) ")
+            wm.draw_borders(win_menu, f" {translate('hub_title')} (Lantai: {highest_floor} | Gold: {gold} | Item: {len(inventory_sys.items)}) ")
             for i, opt in enumerate(options):
                 prefix = "≫  " if i == selected else "   "
                 win_menu.addstr(2+i, 3, f"{prefix}{opt}")
                 
             # Draw Party Panel
-            wm.draw_borders(win_party, " PARTY STATUS ")
+            wm.draw_borders(win_party, translate("party_status"))
             for i, h in enumerate(party[:4]):
                 win_party.addstr(2+(i*3), 3, f"{h.name} ({h.role}) - Lv.{h.level}")
                 wm.draw_progress_bar(win_party, 3+(i*3), 3, h.hp, h.max_hp, 20, "HP")
@@ -98,15 +100,15 @@ def render_team_management(stdscr, wm, roster):
             win_left = curses.newwin(max_y, left_w, 0, 0)
             win_right = curses.newwin(max_y, max_x - left_w, 0, left_w)
             
-            wm.draw_borders(win_left, " MANAJEMEN TIM ")
+            wm.draw_borders(win_left, translate("team_management"))
             
             y_offset = 2
-            win_left.addstr(y_offset, 2, "--- PARTY AKTIF (Maks 4) ---", curses.color_pair(3))
+            win_left.addstr(y_offset, 2, translate("active_party"), curses.color_pair(3))
             y_offset += 1
             for i, h in enumerate(roster):
                 if i == 4:
                     y_offset += 1
-                    win_left.addstr(y_offset, 2, "--- CADANGAN ---", curses.color_pair(3))
+                    win_left.addstr(y_offset, 2, translate("backup_party"), curses.color_pair(3))
                     y_offset += 1
                 
                 prefix = "≫ " if i == selected else "  "
@@ -115,7 +117,7 @@ def render_team_management(stdscr, wm, roster):
                 win_left.addstr(y_offset, 2, f"{prefix}{h.name}{swap_str}", color)
                 y_offset += 1
                 
-            wm.draw_borders(win_right, " DETAIL PAHLAWAN ")
+            wm.draw_borders(win_right, translate("hero_detail"))
             h = roster[selected]
             win_right.addstr(2, 4, f"Nama  : {h.name} ({h.role})", curses.color_pair(3))
             win_right.addstr(3, 4, f"Level : {h.level} (XP: {h.xp}/{h.xp_to_next})")
@@ -137,15 +139,15 @@ def render_team_management(stdscr, wm, roster):
             
             for idx_slot, (s_key, s_name) in enumerate(SLOTS):
                 eq_item = h.equipped.get(s_key)
-                eq_name = eq_item.name if eq_item else "KOSONG"
+                eq_name = eq_item.name if eq_item else translate("equipped_empty")
                 win_right.addstr(10 + idx_slot, 4, f"{s_name}: {eq_name}", curses.color_pair(4))
             
-            win_right.addstr(max_y - 4, 4, "Instruksi:", curses.color_pair(3))
+            win_right.addstr(max_y - 4, 4, "Instruksi:" if config.get("language", "ID") == "ID" else "Instructions:", curses.color_pair(3))
             if swap_target == -1:
-                win_right.addstr(max_y - 3, 4, "- ENTER: Pilih hero untuk dipindah/swap")
+                win_right.addstr(max_y - 3, 4, "- ENTER: Pilih hero untuk dipindah/swap" if config.get("language", "ID") == "ID" else "- ENTER: Select hero to move/swap")
             else:
-                win_right.addstr(max_y - 3, 4, "- ENTER: Swap dengan hero terpilih [PILIH]")
-            win_right.addstr(max_y - 2, 4, "- ESC/Q: Kembali")
+                win_right.addstr(max_y - 3, 4, "- ENTER: Swap dengan hero terpilih [PILIH]" if config.get("language", "ID") == "ID" else "- ENTER: Swap with selected hero [PILIH]")
+            win_right.addstr(max_y - 2, 4, "- ESC/Q: Kembali" if config.get("language", "ID") == "ID" else "- ESC/Q: Back")
             
             win_left.refresh()
             win_right.refresh()
@@ -210,12 +212,12 @@ def render_equip_menu(stdscr, wm, roster, inventory_sys):
             win_left = curses.newwin(max_y, left_w, 0, 0)
             win_right = curses.newwin(max_y, max_x - left_w, 0, left_w)
             
-            wm.draw_borders(win_left, " PILIH HERO " if state == "HERO" else " HERO ")
+            wm.draw_borders(win_left, translate("pilih_hero") if state == "HERO" else translate("hero_str"))
             for i, h_ in enumerate(roster):
                 prefix = "≫ " if (i == sel_hero and state == "HERO") else "  "
                 win_left.addstr(2+i, 2, f"{prefix}{h_.name}")
                 
-            wm.draw_borders(win_right, " EQUIP / INVENTORY ")
+            wm.draw_borders(win_right, translate("equip_inventory"))
             if roster:
                 h = roster[sel_hero]
                 win_right.addstr(2, 2, f"Target: {h.name} (Lv.{h.level}) | HP: {h.max_hp} | ATK: {h.atk} | DEF: {h.def_stat} | SPD: {h.spd}", curses.color_pair(3))
@@ -224,7 +226,7 @@ def render_equip_menu(stdscr, wm, roster, inventory_sys):
                 for i, (s_key, s_name) in enumerate(SLOTS):
                     prefix = "≫ " if (i == sel_slot and state in ["SLOT", "ITEM"]) else "  "
                     eq_item = h.equipped.get(s_key)
-                    eq_name = eq_item.name if eq_item else "KOSONG"
+                    eq_name = eq_item.name if eq_item else translate("equipped_empty")
                     stats_str = ""
                     if eq_item:
                         stats_str = " | " + ", ".join([f"{k}: +{v}" for k,v in getattr(eq_item, 'stat_modifiers', {}).items()])
@@ -233,11 +235,11 @@ def render_equip_menu(stdscr, wm, roster, inventory_sys):
                     win_right.addstr(4+i, 2, f"{prefix}{s_name:15}: {eq_name}{stats_str}", color)
                 
                 if state == "SLOT":
-                    win_right.addstr(14, 2, "(Tekan ENTER untuk pilih item, 'u' untuk unequip)", curses.color_pair(1))
+                    win_right.addstr(14, 2, translate("equip_instruction_slot"), curses.color_pair(1))
                 elif state == "ITEM":
-                    win_right.addstr(14, 2, "--- PILIH ITEM DARI INVENTORY ---", curses.color_pair(3))
+                    win_right.addstr(14, 2, translate("equip_instruction_item"), curses.color_pair(3))
                     if not equippables:
-                        win_right.addstr(15, 2, "Tidak ada item yang cocok.")
+                        win_right.addstr(15, 2, translate("no_match_item"))
                     else:
                         for i, it in enumerate(equippables):
                             if i > max_y - 19: break
@@ -245,7 +247,7 @@ def render_equip_menu(stdscr, wm, roster, inventory_sys):
                             stats = " | ".join([f"{k}: +{v}" for k,v in getattr(it, 'stat_modifiers', {}).items()])
                             win_right.addstr(15+i, 2, f"{prefix}{it.name} ({stats})", curses.color_pair(2) if i == sel_item else 0)
                             
-            win_right.addstr(max_y - 2, 2, "(ESC untuk kembali)")
+            win_right.addstr(max_y - 2, 2, translate("back_esc"))
             
             win_left.refresh()
             win_right.refresh()
@@ -292,24 +294,26 @@ def render_tavern(stdscr, wm, roster, gold):
             win_left = curses.newwin(max_y, left_w, 0, 0)
             win_right = curses.newwin(max_y, max_x - left_w, 0, left_w)
             
-            wm.draw_borders(win_left, " KEDAI MINUM ")
+            wm.draw_borders(win_left, translate("tavern_title"))
             win_left.addstr(2, 2, f"Gold: {gold}G", curses.color_pair(3))
-            win_left.addstr(3, 2, f"Biaya: {cost}G")
+            win_left.addstr(3, 2, f"{translate('tavern_cost')}: {cost}G")
             
             if not available:
-                win_left.addstr(5, 2, "Semua karakter direkrut!")
+                win_left.addstr(5, 2, translate("all_recruited"))
             else:
                 for i, role in enumerate(available):
                     prefix = "≫ " if i == selected else "  "
                     win_left.addstr(6+i, 2, f"{prefix}{role}")
                     
-            wm.draw_borders(win_right, " DETAIL KONTRAK ")
+            wm.draw_borders(win_right, translate("contract_detail"))
             if available:
                 role = available[selected]
                 arch = HERO_ARCHETYPES[role]
                 win_right.addstr(2, 4, f"Class : {role}", curses.color_pair(4))
                 
-                desc = arch.get("desc", "Tidak ada deskripsi.")
+                # Fetch localized description
+                lang = config.get("language", "ID")
+                desc = arch.get("desc", {}).get(lang, arch.get("desc", {}).get("ID", "No description.")) if isinstance(arch.get("desc"), dict) else arch.get("desc", "No description.")
                 # We split description if it is too long
                 if len(desc) > 30:
                     win_right.addstr(4, 4, f"Info  : {desc[:30]}")
@@ -323,7 +327,7 @@ def render_tavern(stdscr, wm, roster, gold):
                 win_right.addstr(5+o, 4, f"ATK   : {arch['atk']}")
                 win_right.addstr(6+o, 4, f"DEF   : {arch['def']}")
                 win_right.addstr(7+o, 4, f"SPD   : {arch['spd']}")
-                win_right.addstr(10+o, 4, "(Tekan ENTER untuk merekrut pahlawan ini)")
+                win_right.addstr(10+o, 4, translate("tavern_instruction"))
                 
             win_left.refresh()
             win_right.refresh()
@@ -341,7 +345,7 @@ def render_tavern(stdscr, wm, roster, gold):
                 return available[selected]
             else:
                 try: 
-                    win_right.addstr(12, 4, "GOLD TIDAK CUKUP!", curses.color_pair(1))
+                    win_right.addstr(12, 4, translate("gold_not_enough"), curses.color_pair(1))
                     win_right.refresh()
                 except: pass
                 curses.napms(1000)
@@ -361,13 +365,13 @@ def render_level_selection(stdscr, wm, highest_floor):
             start_x = (max_x - box_w) // 2
             
             win = curses.newwin(box_h, box_w, start_y, start_x)
-            wm.draw_borders(win, " PILIH LANTAI DUNGEON ")
+            wm.draw_borders(win, translate("select_floor"))
             
-            header = f"Lantai Tertinggi Dicapai: {highest_floor}"
+            header = f"{translate('highest_floor')}: {highest_floor}"
             win.addstr(2, (box_w - len(header)) // 2, header, curses.color_pair(3))
             
             # Draw a nice selector
-            selector_text = f"◀◀  LANTAI {selected_floor:02d}  ▶▶"
+            selector_text = f"◀◀  LANTAI {selected_floor:02d}  ▶▶" if config.get("language", "ID") == "ID" else f"◀◀  FLOOR {selected_floor:02d}  ▶▶"
             win.addstr(5, (box_w - len(selector_text)) // 2, selector_text, curses.color_pair(4) | curses.A_BOLD)
             
             # Floor info
@@ -376,11 +380,11 @@ def render_level_selection(stdscr, wm, highest_floor):
                 info_text = "⚠ WARNING: BOSS FLOOR ⚠"
                 win.addstr(7, (box_w - len(info_text)) // 2, info_text, curses.color_pair(1) | curses.A_BLINK)
             else:
-                info_text = "Lantai Standar - Hati-hati!"
+                info_text = translate("standard_floor")
                 win.addstr(7, (box_w - len(info_text)) // 2, info_text, curses.color_pair(2))
             
-            footer1 = "[ENTER] Mulai   [ESC] Batal"
-            footer2 = "(Panah KIRI/KANAN untuk mengganti)"
+            footer1 = translate("start_enter")
+            footer2 = translate("change_arrow")
             win.addstr(9, (box_w - len(footer1)) // 2, footer1)
             win.addstr(10, (box_w - len(footer2)) // 2, footer2, curses.color_pair(8) if curses.COLORS >= 8 else 0)
             
@@ -415,27 +419,27 @@ def render_shop_menu(stdscr, wm, gold, inventory_sys):
             win_left = curses.newwin(max_y, left_w, 0, 0)
             win_right = curses.newwin(max_y, max_x - left_w, 0, left_w)
             
-            wm.draw_borders(win_left, " TOKO BARANG ")
-            win_left.addstr(2, 2, f"Gold Anda: {gold}G", curses.color_pair(3))
+            wm.draw_borders(win_left, translate("shop_title"))
+            win_left.addstr(2, 2, f"{'Gold Anda' if config.get('language', 'ID') == 'ID' else 'Your Gold'}: {gold}G", curses.color_pair(3))
             
             if message:
                 win_left.addstr(4, 2, message, curses.color_pair(4))
                 message = ""
                 
-            win_left.addstr(max_y - 2, 2, "(ESC untuk kembali)")
+            win_left.addstr(max_y - 2, 2, translate("back_esc"))
             
-            wm.draw_borders(win_right, " DAFTAR BARANG (JUAL) ")
+            wm.draw_borders(win_right, translate("shop_list"))
             if not items:
-                win_right.addstr(2, 2, "Inventory kosong. Tidak ada yang bisa dijual.")
+                win_right.addstr(2, 2, translate("shop_empty"))
             else:
                 for i, it in enumerate(items):
                     prefix = "≫ " if i == selected else "  "
                     # Only show 15 items to avoid overflow, adjust later if scrolling needed
                     if i < 15:
-                        win_right.addstr(2+i, 2, f"{prefix}{it.name} ({it.rarity.name}) - Harga Jual: {it.value}G", curses.color_pair(3))
+                        win_right.addstr(2+i, 2, f"{prefix}{it.name} ({it.rarity.name}) - {'Harga Jual' if config.get('language', 'ID') == 'ID' else 'Sell Price'}: {it.value}G", curses.color_pair(3))
                 
                 if items:
-                    win_right.addstr(max_y - 2, 2, "(Tekan ENTER untuk menjual item yang dipilih)")
+                    win_right.addstr(max_y - 2, 2, translate("shop_sell_instruction"))
                     
             win_left.refresh()
             win_right.refresh()
@@ -452,5 +456,5 @@ def render_shop_menu(stdscr, wm, gold, inventory_sys):
             item_to_sell = items[selected]
             gold += item_to_sell.value
             inventory_sys.items.remove(item_to_sell)
-            message = f"Terjual: {item_to_sell.name} (+{item_to_sell.value}G)"
+            message = f"{translate('sold')}: {item_to_sell.name} (+{item_to_sell.value}G)"
 
